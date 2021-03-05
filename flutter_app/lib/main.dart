@@ -30,7 +30,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool searching = false;
   List<BluetoothService> _services;
-
+  BluetoothState state;
+  String text = '';
   _addDeviceTolist(final BluetoothDevice device) {
     if (!widget.devicesList.contains(device)) {
       setState(() {
@@ -41,6 +42,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
+    FlutterBlue.instance.state.listen((state){
+      if(state == BluetoothState.off){
+        setState(() {
+          text = 'Turn on Bluetooth';
+        });
+      }else{
+        setState(() {
+          text = '';
+        });      }
+    });
     super.initState();
   }
 
@@ -70,7 +81,15 @@ class _MyHomePageState extends State<MyHomePage> {
     });
     widget.flutterBlue.startScan();
   }
-
+  Widget _bluetoothOffScreen(){
+    return Center(
+      child: Container(
+        color: Colors.blue,
+        child: Center(
+          child:Icon(Icons.bluetooth_disabled_sharp, size:150.0, color: Colors.white,)
+        )),
+    );
+  }
   ListView _buildListViewOfDevices() {
     List<Padding> padding = [];
     for (BluetoothDevice device in widget.devicesList) {
@@ -134,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: Text(widget.title),
           actions: [
-            !searching
+            !searching && text == ''
                 ? Row(
                     children: [
                       Text(
@@ -146,13 +165,13 @@ class _MyHomePageState extends State<MyHomePage> {
                         onPressed: scan,
                       )
                     ],
-                  )
-                : IconButton(
+                  ):searching && text == ''
+                ? IconButton(
                     icon: Icon(Icons.cancel),
                     onPressed: stop,
-                  ),
+                  ):Container()
           ],
         ),
-        body: _buildListViewOfDevices(),
+        body:text==''? _buildListViewOfDevices():_bluetoothOffScreen(),
       );
 }
