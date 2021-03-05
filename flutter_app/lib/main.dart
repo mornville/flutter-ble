@@ -8,12 +8,12 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'BLE Demo',
-    theme: ThemeData(
-      primarySwatch: Colors.blue,
-    ),
-    home: MyHomePage(title: 'Flutter BLE Demo'),
-  );
+        title: 'BLE Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: MyHomePage(title: 'Flutter BLE Demo'),
+      );
 }
 
 class MyHomePage extends StatefulWidget {
@@ -21,7 +21,7 @@ class MyHomePage extends StatefulWidget {
 
   final String title;
   final FlutterBlue flutterBlue = FlutterBlue.instance;
-  final List<BluetoothDevice> devicesList = new List<BluetoothDevice>();
+  final List<BluetoothDevice> devicesList = [];
   final Map<Guid, List<int>> readValues = new Map<Guid, List<int>>();
 
   @override
@@ -29,6 +29,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool searching = false;
   final _writeController = TextEditingController();
   BluetoothDevice _connectedDevice;
   List<BluetoothService> _services;
@@ -44,6 +45,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+  }
+  void stop(){
+    setState(() {
+      searching = false;
+      widget.flutterBlue.stopScan();
+
+    });
+  }
+  void scan() {
+    setState(() {
+      searching = true;
+      print('setting true');
+    });
     widget.flutterBlue.connectedDevices
         .asStream()
         .listen((List<BluetoothDevice> devices) {
@@ -60,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   ListView _buildListViewOfDevices() {
-    List<Container> containers = new List<Container>();
+    List<Container> containers = [];
     for (BluetoothDevice device in widget.devicesList) {
       containers.add(
         Container(
@@ -72,6 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: <Widget>[
                     Text(device.name == '' ? '(unknown device)' : device.name),
                     Text(device.id.toString()),
+                    Text(device.type.toString())
                   ],
                 ),
               ),
@@ -113,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<ButtonTheme> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
-    List<ButtonTheme> buttons = new List<ButtonTheme>();
+    List<ButtonTheme> buttons = [];
 
     if (characteristic.properties.read) {
       buttons.add(
@@ -122,8 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 20,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: RaisedButton(
-              color: Colors.blue,
+            child: ElevatedButton(
               child: Text('READ', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 var sub = characteristic.value.listen((value) {
@@ -146,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 20,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: RaisedButton(
+            child: ElevatedButton(
               child: Text('WRITE', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 await showDialog(
@@ -194,7 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 20,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: RaisedButton(
+            child: ElevatedButton(
               child: Text('NOTIFY', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 characteristic.value.listen((value) {
@@ -212,10 +226,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   ListView _buildConnectDeviceView() {
-    List<Container> containers = new List<Container>();
+    List<Container> containers = [];
 
     for (BluetoothService service in _services) {
-      List<Widget> characteristicsWidget = new List<Widget>();
+      List<Widget> characteristicsWidget = [];
 
       for (BluetoothCharacteristic characteristic in service.characteristics) {
         characteristicsWidget.add(
@@ -272,8 +286,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-  appBar: AppBar(
-  title: Text(widget.title),
-  ),
-  body: _buildView(),   );
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: [
+            !searching
+                ? IconButton(
+                    icon: Icon(Icons.search),
+                    onPressed: scan,
+                  )
+                : IconButton(
+                    icon: Icon(Icons.cancel),
+                    onPressed: stop,
+                  ),
+          ],
+        ),
+        body: _buildView(),
+      );
 }
