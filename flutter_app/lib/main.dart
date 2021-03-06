@@ -8,11 +8,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
-        title: 'BLE Demo',
+        title: 'Flutter ESP32',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: MyHomePage(title: 'Flutter To ESP32'),
+        home: MyHomePage(title: 'Flutter ESP32'),
       );
 }
 
@@ -154,18 +154,12 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(widget.title),
           actions: [
             !searching && text == ''
-                ? Row(
-                    children: [
-                      Text(
-                        'Search',
-                        style: TextStyle(fontSize: 18.0),
-                      ),
+                ?
                       IconButton(
                         icon: Icon(Icons.search),
                         onPressed: scan,
                       )
-                    ],
-                  ):searching && text == ''
+                   :searching && text == ''
                 ? IconButton(
                     icon: Icon(Icons.cancel),
                     onPressed: stop,

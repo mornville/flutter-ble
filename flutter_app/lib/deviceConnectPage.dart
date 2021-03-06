@@ -14,20 +14,15 @@ class DeviceConnect extends StatefulWidget {
 }
 
 class _DeviceConnectState extends State<DeviceConnect> {
-  List<ButtonTheme> _buildReadWriteNotifyButton(
+  List<ElevatedButton> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
-    List<ButtonTheme> buttons = [];
+    List<ElevatedButton> buttons = [];
     final _ssidController = TextEditingController();
     final _passwordController = TextEditingController();
 
     if (characteristic.properties.read) {
       buttons.add(
-        ButtonTheme(
-          minWidth: 10,
-          height: 20,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
+  ElevatedButton(
               child: Text('READ', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 var sub = characteristic.value.listen((value) {
@@ -38,19 +33,13 @@ class _DeviceConnectState extends State<DeviceConnect> {
                 await characteristic.read();
                 sub.cancel();
               },
-            ),
-          ),
+
         ),
       );
     }
     if (characteristic.properties.write) {
       buttons.add(
-        ButtonTheme(
-          minWidth: 10,
-          height: 20,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
+      ElevatedButton(
               child: Text('WRITE', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 await showDialog(
@@ -104,18 +93,13 @@ class _DeviceConnectState extends State<DeviceConnect> {
                     });
               },
             ),
-          ),
-        ),
+
       );
     }
     if (characteristic.properties.notify) {
       buttons.add(
-        ButtonTheme(
-          minWidth: 10,
-          height: 20,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton(
+
+          ElevatedButton(
               child: Text('NOTIFY', style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 characteristic.value.listen((value) {
@@ -124,8 +108,6 @@ class _DeviceConnectState extends State<DeviceConnect> {
                 await characteristic.setNotifyValue(true);
               },
             ),
-          ),
-        ),
       );
     }
 
@@ -136,37 +118,35 @@ class _DeviceConnectState extends State<DeviceConnect> {
     List<Container> containers = [];
 
     for (BluetoothService service in widget.services) {
-      List<Widget> characteristicsWidget = [];
+      List<ListTile> tiles = [];
 
       for (BluetoothCharacteristic characteristic in service.characteristics) {
-        characteristicsWidget.add(
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Text(characteristic.uuid.toString(),
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    ..._buildReadWriteNotifyButton(characteristic),
-                  ],
-                ),
-                
-                Divider(),
-              ],
+        tiles.add(
+       ListTile(
+              title: Text('Char ID: ' +  characteristic.uuid.toString(), style: TextStyle(fontSize: 12.0),),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text('Actions Available: '),
+                  ..._buildReadWriteNotifyButton(characteristic),
+                  Text('Read Value: ' +
+                      widget.readValues[characteristic.uuid].toString()),
+                ],
+              ),
             ),
-          ),
+
+
+
         );
       }
       containers.add(
         Container(
           child: ExpansionTile(
               title: Text(service.uuid.toString()),
-              children: characteristicsWidget),
+              children: tiles),
         ),
       );
     }
@@ -186,6 +166,6 @@ class _DeviceConnectState extends State<DeviceConnect> {
     title: Text(widget.device.name.toString()),
       ),
       body: _buildConnectDeviceView(),
-    );;
+    );
   }
 }
