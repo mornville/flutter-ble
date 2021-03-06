@@ -17,7 +17,8 @@ class _DeviceConnectState extends State<DeviceConnect> {
   List<ButtonTheme> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
     List<ButtonTheme> buttons = [];
-    final _writeController = TextEditingController();
+    final _ssidController = TextEditingController();
+    final _passwordController = TextEditingController();
 
     if (characteristic.properties.read) {
       buttons.add(
@@ -57,21 +58,38 @@ class _DeviceConnectState extends State<DeviceConnect> {
                     builder: (BuildContext context) {
                       return AlertDialog(
                         title: Text("Write"),
-                        content: Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: TextField(
-                                controller: _writeController,
+                        content: Container(
+                          height: 200,
+                          child: Column(
+                            children: <Widget>[
+
+                              Expanded(
+                                child: TextField(
+                                  controller: _ssidController,
+                                  decoration: InputDecoration(
+                                    labelText: 'WiFi SSID',
+
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: TextField(
+                                  controller: _passwordController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         actions: <Widget>[
                           FlatButton(
                             child: Text("Send"),
                             onPressed: () {
                               characteristic.write(
-                                  utf8.encode(_writeController.value.text));
+                                  utf8.encode(_ssidController.value.text +',' +_passwordController.value.text));
                               Navigator.pop(context);
                             },
                           ),
@@ -137,12 +155,7 @@ class _DeviceConnectState extends State<DeviceConnect> {
                     ..._buildReadWriteNotifyButton(characteristic),
                   ],
                 ),
-                Row(
-                  children: <Widget>[
-                    Text('Value: ' +
-                        widget.readValues[characteristic.uuid].toString()),
-                  ],
-                ),
+                
                 Divider(),
               ],
             ),
