@@ -7,7 +7,7 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
+        debugShowCheckedModeBanner: false,
         title: 'Flutter ESP32',
         theme: ThemeData(
           primarySwatch: Colors.blue,
@@ -28,6 +28,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  TextEditingController _prefixController = TextEditingController();
   bool searching = false;
   List<BluetoothService> _services;
   BluetoothState state;
@@ -42,15 +43,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    FlutterBlue.instance.state.listen((state){
-      if(state == BluetoothState.off){
+    FlutterBlue.instance.state.listen((state) {
+      if (state == BluetoothState.off) {
         setState(() {
           text = 'Turn on Bluetooth';
         });
-      }else{
+      } else {
         setState(() {
           text = '';
-        });      }
+        });
+      }
     });
     super.initState();
   }
@@ -62,38 +64,53 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void scan() {
+  void scan(String prefix) {
     setState(() {
       searching = true;
-      print('setting true');
     });
+
+    // Searches in already connected Devices
     widget.flutterBlue.connectedDevices
         .asStream()
         .listen((List<BluetoothDevice> devices) {
       for (BluetoothDevice device in devices) {
-        _addDeviceTolist(device);
+        if (device.name
+            .toString()
+            .toLowerCase()
+            .contains(prefix.toLowerCase())) {
+          _addDeviceTolist(device);
+        }
       }
     });
+
+    // Searches for other devices
     widget.flutterBlue.scanResults.listen((List<ScanResult> results) {
       for (ScanResult result in results) {
-        _addDeviceTolist(result.device);
+        if (result.device.name
+            .toString()
+            .toLowerCase()
+            .contains(prefix.toLowerCase())) {
+          _addDeviceTolist(result.device);
+          print(result.device);
+        }
       }
     });
     widget.flutterBlue.startScan();
   }
-  Widget _bluetoothOffScreen(){
-    return Center(
-      child: Container(
-        color: Colors.blue,
-        child: Center(
-          child:Icon(Icons.bluetooth_disabled_sharp, size:150.0, color: Colors.white,)
-        )),
-    );
-  }
+
+  // Widget _bluetoothOffScreen(){
+  //   return Center(
+  //     child: Container(
+  //       color: Colors.blue,
+  //       child: Center(
+  //         child:Icon(Icons.bluetooth_disabled_sharp, size:150.0, color: Colors.white,)
+  //       )),
+  //   );
+  // }
   ListView _buildListViewOfDevices() {
-    List<Padding> padding = [];
+    List<Padding> deviceTile = [];
     for (BluetoothDevice device in widget.devicesList) {
-      padding.add(
+      deviceTile.add(
         Padding(
           padding: EdgeInsets.all(8.0),
           child: ListTile(
@@ -129,8 +146,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DeviceConnect(
-                            device: device, services: _services),
+                        builder: (context) =>
+                            DeviceConnect(device: device, services: _services),
                       ));
                 });
               },
@@ -143,29 +160,78 @@ class _MyHomePageState extends State<MyHomePage> {
     return ListView(
       padding: const EdgeInsets.all(8),
       children: <Widget>[
-        ...padding,
+        ...deviceTile,
       ],
     );
   }
 
+  void selectConnectionMethod() {}
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
           actions: [
             !searching && text == ''
-                ?
-                      IconButton(
-                        icon: Icon(Icons.search),
-                        onPressed: scan,
+                ? Container()
+                : searching && text == ''
+                    ? IconButton(
+                        icon: Icon(Icons.cancel),
+                        onPressed: () {
+                          stop();
+                        },
                       )
-                   :searching && text == ''
-                ? IconButton(
-                    icon: Icon(Icons.cancel),
-                    onPressed: stop,
-                  ):Container()
+                    : Container()
           ],
         ),
-        body:text==''? _buildListViewOfDevices():_bluetoothOffScreen(),
+        body: searching
+            ? _buildListViewOfDevices()
+            : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                        onPressed: selectConnectionMethod,
+                        child: Text('Add a Device Using QR Code')),
+                    ElevatedButton(
+                      child: Text('Add device Using Prefix',
+                          style: TextStyle(color: Colors.white)),
+                      onPressed: () async {
+                        await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("PREFIX"),
+                                content: Container(
+                                  height: 200,
+                                  child: Column(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _prefixController,
+                                          decoration: InputDecoration(
+                                            labelText: 'Type Prefix Here...',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text("Search"),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      scan(_prefixController.value.text
+                                          .toString());
+                                    },
+                                  ),
+                                ],
+                              );
+                            });
+                      },
+                    ),
+                  ],
+                ),
+              ),
       );
 }
