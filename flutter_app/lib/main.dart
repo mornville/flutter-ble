@@ -34,7 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
   BluetoothState state;
   String text = '';
   List<Padding> deviceTile = [];
-
+  bool prefixFound = false;
   _addDeviceTolist(final BluetoothDevice device) {
     if (!widget.devicesList.contains(device)) {
       setState(() {
@@ -66,10 +66,18 @@ class _MyHomePageState extends State<MyHomePage> {
       deviceTile = [];
     });
   }
-
+  bool checkForPrefix(String deviceName, String prefix){
+    for(int i=0;i<prefix.length;i++){
+      if(deviceName[i].toLowerCase() != prefix[i].toLowerCase()){
+        return false;
+      }
+    }
+    return true;
+  }
   void scan(String prefix) {
     setState(() {
       searching = true;
+      deviceTile = [];
     });
 
     // Searches in already connected Devices
@@ -77,10 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
         .asStream()
         .listen((List<BluetoothDevice> devices) {
       for (BluetoothDevice device in devices) {
-        if (device.name
-            .toString()
-            .toLowerCase()
-            .contains(prefix.toLowerCase())) {
+        print(checkForPrefix(device.name, prefix));
+        if(checkForPrefix(device.name, prefix)){
+          prefixFound = true;
           _addDeviceTolist(device);
         }
       }
@@ -88,13 +95,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Searches for other devices
     widget.flutterBlue.scanResults.listen((List<ScanResult> results) {
+
       for (ScanResult result in results) {
-        if (result.device.name
-            .toString()
-            .toLowerCase()
-            .contains(prefix.toLowerCase())) {
+        print((result.device.name));
+
+        if(checkForPrefix(result.device.name, prefix)){
           _addDeviceTolist(result.device);
-          print(result.device);
+          prefixFound = true;
         }
       }
     });
@@ -110,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
   //       )),
   //   );
   // }
-  ListView _buildListViewOfDevices() {
+  Widget _buildListViewOfDevices() {
     for (BluetoothDevice device in widget.devicesList) {
       deviceTile.add(
         Padding(
@@ -159,7 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
-    return ListView(
+    return prefixFound==false?Center(child: Text('No devices with prefix : ${_prefixController.value.text} found')):ListView(
       padding: const EdgeInsets.all(8),
       children: <Widget>[
         ...deviceTile,
