@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'dart:convert';
 
 class QrCodeScanner extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
   Barcode result;
   QRViewController controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  Map<String, dynamic> textFromQR;
 
   // In order to get hot reload to work we need to pause the camera if the platform
   // is android, or resume the camera if the platform is iOS.
@@ -25,22 +27,42 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
       controller.resumeCamera();
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: <Widget>[
-          Expanded(flex: 4, child: _buildQrView(context)),
+          Expanded(flex: 3, child: _buildQrView(context)),
           Expanded(
             flex: 1,
             child: FittedBox(
               fit: BoxFit.contain,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
                   if (result != null)
-                    Text(
-                        'Barcode Type: ${describeEnum(result.format)}   Data: ${result.code}')
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Device Name: ${textFromQR["name"].toString()}',
+                          style: TextStyle(fontSize: 10.0),
+                        ),
+                        Text(
+                          'QR Version: ${textFromQR["ver"].toString()}',
+                          style: TextStyle(fontSize: 10.0),
+                        ),
+                        Text(
+                          'Pop Code: ${textFromQR["pop"].toString()}',
+                          style: TextStyle(fontSize: 10.0),
+                        ),
+                        Text(
+                          'Transport: ${textFromQR["transport"].toString()}',
+                          style: TextStyle(fontSize: 10.0),
+                        )
+                      ],
+                    )
                   else
                     Text('Scan a code'),
                   Row(
@@ -49,31 +71,34 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
                     children: <Widget>[
                       Container(
                         margin: EdgeInsets.all(8),
-                        child: ElevatedButton(
+                        child: IconButton(
                             onPressed: () async {
                               await controller?.toggleFlash();
                               setState(() {});
                             },
-                            child: FutureBuilder(
+                            color: Colors.blue,
+                            icon: FutureBuilder(
                               future: controller?.getFlashStatus(),
                               builder: (context, snapshot) {
-                                return Text('Flash: ${snapshot.data}');
+                                return !snapshot.data
+                                    ? Icon(Icons.flash_off_rounded)
+                                    : Icon(Icons.flash_on_rounded);
                               },
                             )),
                       ),
                       Container(
                         margin: EdgeInsets.all(8),
-                        child: ElevatedButton(
+                        child: IconButton(
                             onPressed: () async {
                               await controller?.flipCamera();
                               setState(() {});
                             },
-                            child: FutureBuilder(
+                            color: Colors.blue,
+                            icon: FutureBuilder(
                               future: controller?.getCameraInfo(),
                               builder: (context, snapshot) {
                                 if (snapshot.data != null) {
-                                  return Text(
-                                      'Camera facing ${describeEnum(snapshot.data)}');
+                                  return Icon(Icons.flip_camera_ios);
                                 } else {
                                   return Text('loading');
                                 }
@@ -82,30 +107,7 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
                       )
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Container(
-                        margin: EdgeInsets.all(8),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await controller?.pauseCamera();
-                          },
-                          child: Text('pause', style: TextStyle(fontSize: 20)),
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.all(8),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await controller?.resumeCamera();
-                          },
-                          child: Text('resume', style: TextStyle(fontSize: 20)),
-                        ),
-                      )
-                    ],
-                  ),
+
                 ],
               ),
             ),
@@ -118,9 +120,9 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
   Widget _buildQrView(BuildContext context) {
     // For this example we check how width or tall the device is and change the scanArea and overlay accordingly.
     var scanArea = (MediaQuery.of(context).size.width < 400 ||
-        MediaQuery.of(context).size.height < 400)
-        ? 150.0
-        : 300.0;
+            MediaQuery.of(context).size.height < 400)
+        ? 200.0
+        : 400.0;
     // To ensure the Scanner view is properly sizes after rotation
     // we need to listen for Flutter SizeChanged notification and update controller
     return QRView(
@@ -142,6 +144,11 @@ class _QrCodeScannerState extends State<QrCodeScanner> {
     controller.scannedDataStream.listen((scanData) {
       setState(() {
         result = scanData;
+        if (result != null) {
+          setState(() {
+            textFromQR = jsonDecode(result.code.toString());
+          });
+        }
       });
     });
   }
