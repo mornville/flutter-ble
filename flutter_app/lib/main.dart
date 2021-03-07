@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'deviceConnectPage.dart';
-
+import 'qrCodeScanConnection.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -33,6 +33,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<BluetoothService> _services;
   BluetoothState state;
   String text = '';
+  List<Padding> deviceTile = [];
+
   _addDeviceTolist(final BluetoothDevice device) {
     if (!widget.devicesList.contains(device)) {
       setState(() {
@@ -61,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       searching = false;
       widget.flutterBlue.stopScan();
+      deviceTile = [];
     });
   }
 
@@ -108,7 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
   //   );
   // }
   ListView _buildListViewOfDevices() {
-    List<Padding> deviceTile = [];
     for (BluetoothDevice device in widget.devicesList) {
       deviceTile.add(
         Padding(
@@ -165,7 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void selectConnectionMethod() {}
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -190,7 +192,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                        onPressed: selectConnectionMethod,
+                        onPressed:(){ Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => QrCodeScanner()),
+                        );},
                         child: Text('Add a Device Using QR Code')),
                     ElevatedButton(
                       child: Text('Add device Using Prefix',
